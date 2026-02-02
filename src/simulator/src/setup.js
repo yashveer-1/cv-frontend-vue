@@ -1,6 +1,8 @@
 /* eslint-disable import/no-cycle */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable guard-for-in */
+import { LoadCircuit } from './LoadCircuit'
+import { exampleConfig } from './exampleConfig'
 import { generateId, showMessage } from './utils'
 import { backgroundArea } from './backgroundArea'
 import plotArea from './plotArea'
@@ -67,6 +69,14 @@ export function resetup() {
     update() // INEFFICIENT, needs to be deprecated
     simulationArea.prevScale = 0
     dots()
+    if (!window.__AI_CIRCUIT_LOADED__) {
+    console.log('[resetup] loading AI circuit')
+    LoadCircuit(exampleConfig)
+    window.__AI_CIRCUIT_LOADED__ = true
+}
+
+
+    
 }
 
 window.onresize = resetup // listener
@@ -169,6 +179,7 @@ function showTour() {
  */
 export function setup() {
     setupEnvironment()
+
     if (!embed) {
         setupUI()
         startMainListeners()

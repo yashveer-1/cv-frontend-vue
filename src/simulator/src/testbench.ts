@@ -2,7 +2,7 @@ import { TestData } from "#/store/testBenchStore";
 import { showMessage } from "#/simulator/src/utils";
 import { useTestBenchStore, TestBenchData } from "#/store/testBenchStore";
 import { changeClockEnable } from "#/simulator/src/sequential";
-import { play } from "#/simulator/src/engine";
+import { play, errorDetectedGet } from "#/simulator/src/engine";
 import { confirmOption } from "#/components/helpers/confirmComponent/ConfirmComponent.vue";
 import { escapeHtml } from "#/simulator/src/utils";
 
@@ -417,16 +417,25 @@ export function runAll(data: TestData, scope = globalScope) {
   const { inputs, outputs, reset } = bindIO(data, scope);
   let totalCases = 0;
   let passedCases = 0;
+  let abortTest = false;
 
   data.groups.forEach((group) => {
+    if (abortTest) return;
     // for (const output of group.outputs) output.results = [];
     group.outputs.forEach((output) => (output.results = []));
     for (let case_i = 0; case_i < group.n; case_i++) {
+      if (abortTest) break;
       totalCases++;
       // Set and propagate the inputs
       setInputValues(inputs, group, case_i, scope);
       // If sequential, trigger clock now
       if (data.type === "seq") tickClock(scope);
+
+      if (errorDetectedGet()) {
+        abortTest = true;
+        break;
+      }
+
       // Get output values
       const caseResult = getOutputValues(data, outputs);
       // Put the results in the data
@@ -455,7 +464,7 @@ export function runAll(data: TestData, scope = globalScope) {
   // Return results
   const results: Results = {
     detailed: data,
-    summary: { passed: passedCases, total: totalCases },
+    summary: { passed: abortTest ? 0 : passedCases, total: totalCases },
   };
   return results;
 }

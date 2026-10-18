@@ -99,12 +99,12 @@ export default class Wire {
 
   draw(): void {
     const canvas = simulationArea.canvas;
-    const scope = this.scope;
+    const scope = this.scope || globalScope;
 
-    if (canvas && scope && scope.scale) {
-      const scale = scope.scale;
-      const ox = scope.ox ?? 0;
-      const oy = scope.oy ?? 0;
+    if (canvas && scope && (scope.scale || globalScope?.scale)) {
+      const scale = scope.scale ?? globalScope.scale;
+      const ox = scope.ox ?? globalScope.ox ?? 0;
+      const oy = scope.oy ?? globalScope.oy ?? 0;
 
       const x1 = this.node1.absX() * scale + ox;
       const x2 = this.node2.absX() * scale + ox;

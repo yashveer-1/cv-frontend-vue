@@ -80,6 +80,8 @@ const plotArea = {
             globalScope.Flag[i].cachedIndex = 0
         }
         this.unitUsed = 0
+        plotHeight = sh(20)
+        waveFormHeight = plotHeight - 2 * waveFormPadding
         this.resume()
         this.resize()
     },
@@ -152,11 +154,16 @@ const plotArea = {
     resize() {
         var oldHeight = this.height
         var oldWidth = this.width
-        this.width = document.getElementById('plot').clientWidth * this.DPR
+        var plotContainer = document.getElementById('plot')
+        this.width = (plotContainer ? plotContainer.clientWidth : 0) * this.DPR
         this.height = getFullHeight(globalScope.Flag.length)
         if (oldHeight == this.height && oldWidth == this.width) return
         this.canvas.width = this.width
         this.canvas.height = this.height
+        // Sync container height so the panel visually grows/shrinks
+        if (plotContainer) {
+            plotContainer.style.height = `${this.height / this.DPR}px`
+        }
         this.plot()
     },
     // Setup function, called on page load
@@ -488,7 +495,7 @@ export default plotArea
 
 const timingDiagramButtonActions = {
     smallHeight() {
-        if (plotHeight >= sh(20)) {
+        if (plotHeight > sh(15)) {
             plotHeight -= sh(5)
             waveFormHeight = plotHeight - 2 * waveFormPadding
         }

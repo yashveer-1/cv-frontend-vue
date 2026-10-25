@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import _plotArea from '#/simulator/src/plotArea'
 import TimingDiagramButtons from './TimingDiagramButtons.vue'
 import PanelHeader from '../Shared/PanelHeader.vue'
@@ -52,10 +52,15 @@ import { useTimingDiagramPanelStore } from '#/store/timingDiagramPanelStore'
 import { setupPanelListeners, minimizePanel } from '#/simulator/src/ux'
 
 const layoutStore = useLayoutStore()
-const timingDiagramPanelStore = useTimingDiagramPanelStore();
+const timingDiagramPanelStore = useTimingDiagramPanelStore()
+
+const timingDiagramPanelRef = ref<HTMLElement | null>(null)
+const plotRef = ref<HTMLElement | null>(null)
 
 onMounted(() => {
-    layoutStore.timingDiagramPanelRef = timingDiagramPanelStore.timingDiagramPanelRef
+    timingDiagramPanelStore.plotRef = plotRef.value
+    timingDiagramPanelStore.timingDiagramPanelRef = timingDiagramPanelRef.value
+    layoutStore.timingDiagramPanelRef = timingDiagramPanelRef.value
     setupPanelListeners('.timing-diagram-panel')
     minimizePanel('.timing-diagram-panel')
 })

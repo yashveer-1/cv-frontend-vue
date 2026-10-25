@@ -12,23 +12,38 @@ export const plotArea: PlotArea = _plotArea;
 
 export function handleButtonClick(button: string) {
   const timingDiagramPanelStore = toRefs(useTimingDiagramPanelStore());
+  const plotElement =
+    timingDiagramPanelStore.plotRef.value ||
+    (typeof document !== "undefined" ? document.getElementById("plot") : null);
+
   if (button === "smaller") {
-    if (timingDiagramPanelStore.plotRef.value) {
-      timingDiagramPanelStore.plotRef.value.style.width = `${Math.max(
-        timingDiagramPanelStore.plotRef.value.offsetWidth - 20,
+    if (plotElement) {
+      plotElement.style.width = `${Math.max(
+        plotElement.offsetWidth - 20,
         560,
       )}px`;
     }
     plotArea.resize();
   } else if (button === "larger") {
-    if (timingDiagramPanelStore.plotRef.value) {
-      timingDiagramPanelStore.plotRef.value.style.width = `${timingDiagramPanelStore.plotRef.value.offsetWidth + 20}px`;
+    if (plotElement) {
+      plotElement.style.width = `${plotElement.offsetWidth + 20}px`;
     }
     plotArea.resize();
   } else if (button === "smallHeight") {
     timingDiagramButtonActions.smallHeight();
+    plotArea.resize();
   } else if (button === "largeHeight") {
     timingDiagramButtonActions.largeHeight();
+    plotArea.resize();
+  } else if (button === "reset") {
+    if (plotElement) {
+      plotElement.style.width = "";
+      plotElement.style.height = "";
+    }
+    // Force resize to detect change after plotHeight resets
+    _plotArea.height = 0;
+    _plotArea.width = 0;
+    plotArea.reset();
   } else {
     plotArea[button]();
   }

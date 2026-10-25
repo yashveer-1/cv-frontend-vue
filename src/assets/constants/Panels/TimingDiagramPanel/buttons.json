@@ -14,18 +14,18 @@
         "click": "larger"
     },
     {
-        "title": "Decrease Height",
-        "icon": "fa-chevron-up",
-        "class": "timing-diagram-small-height",
-        "type": "primary",
-        "click": "smallHeight"
-    },
-    {
         "title": "Increase Height",
-        "icon": "fa-chevron-down",
+        "icon": "fa-chevron-up",
         "class": "timing-diagram-large-height",
         "type": "primary",
         "click": "largeHeight"
+    },
+    {
+        "title": "Decrease Height",
+        "icon": "fa-chevron-down",
+        "class": "timing-diagram-small-height",
+        "type": "primary",
+        "click": "smallHeight"
     },
     {
         "title": "Download As Image",

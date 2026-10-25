@@ -30,7 +30,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import _plotArea from '#/simulator/src/plotArea'
 import TimingDiagramButtons from './TimingDiagramButtons.vue'
 import { useLayoutStore } from '#/store/layoutStore'
@@ -40,9 +40,12 @@ import { handleButtonClick, handleUnitsChange } from './TimingDiagramPanel'
 
 const layoutStore = useLayoutStore()
 const simulatorMobileStore = useSimulatorMobileStore()
-const timingDiagramPanelStore = useTimingDiagramPanelStore();
+const timingDiagramPanelStore = useTimingDiagramPanelStore()
+
+const plotRef = ref<HTMLElement | null>(null)
 
 onMounted(() => {
+    timingDiagramPanelStore.plotRef = plotRef.value
     layoutStore.timingDiagramPanelRef = timingDiagramPanelStore.timingDiagramPanelRef
 })
 </script>

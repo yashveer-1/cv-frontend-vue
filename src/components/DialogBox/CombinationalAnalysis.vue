@@ -8,11 +8,13 @@
         :is-persistent="true"
         :table-header="tableHeader"
         :table-body="tableBody"
+        :input-col-count="inputColCount"
         message-text="Boolean Logic Table"
         @button-click="
             (selectedOption, circuitItem, circuitNameVal) =>
                 dialogBoxConformation(selectedOption)
         "
+        @table-body-update="onTableBodyUpdate"
     />
     <v-alert v-if="showAlert" :type="alertType" class="alertStyle">{{
         alertMessage
@@ -23,7 +25,7 @@
 import { stripTags } from '#/simulator/src/utils'
 import { useState } from '#/store/SimulatorStore/state'
 import messageBox from '@/MessageBox/messageBox.vue'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onMounted } from 'vue'
 
 /* imports from combinationalAnalysis.js */
@@ -43,7 +45,13 @@ const inputListNames = ref([])
 const outputListNames = ref([])
 const tableHeader = ref([])
 const tableBody = ref([])
-const output = ref([])
+const output = ref(null)
+
+/** Number of leading (read-only) columns in the truth table: input cols + optional decimal col */
+const inputColCount = computed(() => {
+    const fw = inputArr.value[4]?.val == true ? 1 : 0
+    return inputListNames.value.length + fw
+})
 
 inputArr.value = [
     {
@@ -115,7 +123,7 @@ function clearData() {
     outputListNames.value = []
     tableHeader.value = []
     tableBody.value = []
-    output.value = []
+    output.value = null
 }
 
 function dialogBoxConformation(selectedOption, circuitItem) {
@@ -138,7 +146,13 @@ function dialogBoxConformation(selectedOption, circuitItem) {
     }
     if (selectedOption == 'generateCircuit') {
         SimulatorState.dialogBox.combinationalanalysis_dialog = false
-        GenerateCircuit()
+        GenerateCircuit(
+            outputListNamesInteger.value,
+            inputListNames.value,
+            output.value,
+            outputListNames.value,
+            tableBody.value,
+        )
         clearData()
         SimulatorState.dialogBox.combinationalanalysis_dialog = false
     }
@@ -178,7 +192,7 @@ function createLogicTable() {
     ) {
         // $(this).dialog('close')
         SimulatorState.dialogBox.combinationalanalysis_dialog = false
-
+        output.value = null  // combinational mode: no pre-solved output
         createBooleanPrompt(inputList, outputList, null)
     } else if (
         booleanInputVariables.length > 0 &&
@@ -187,8 +201,8 @@ function createLogicTable() {
     ) {
         // $(this).dialog('close')
         SimulatorState.dialogBox.combinationalanalysis_dialog = false
-        output.value = []
-        solveBooleanFunction(booleanInputVariables, booleanExpression)
+        const solved = solveBooleanFunction(booleanInputVariables, booleanExpression)
+        output.value = solved  // null on error, array of 0/1 on success
         if (output.value != null) {
             createBooleanPrompt(booleanInputVariables, booleanExpression)
         }
@@ -214,23 +228,32 @@ function createLogicTable() {
     }
 }
 
+function onTableBodyUpdate(newBody: any[][]) {
+    tableBody.value = newBody
+}
+
 function createBooleanPrompt(inputList, outputList, scope = globalScope) {
     inputListNames.value =
         inputList || prompt('Enter inputs separated by commas').split(',')
     outputListNames.value =
         outputList || prompt('Enter outputs separated by commas').split(',')
+
+    // Track the column index for each output column so GenerateCircuit can read the right cells.
+    // fw = 1 if decimal column is prepended, 0 otherwise.
+    const fw = inputArr.value[4].val == true ? 1 : 0
+    outputListNamesInteger.value = []
     if (output.value == null) {
+        // Combinational Analysis mode: one output column per output name
         for (var i = 0; i < outputListNames.value.length; i++) {
-            outputListNamesInteger.value[i] = 7 * i + 13
-        } // assigning an integer to the value, 7*i + 13 is random
+            outputListNamesInteger.value.push(inputListNames.value.length + fw + i)
+        }
     } else {
-        outputListNamesInteger.value = [13]
+        // Boolean expression mode: single output column
+        outputListNamesInteger.value = [inputListNames.value.length + fw]
     }
     tableBody.value = []
     tableHeader.value = []
-    let fw = 0
     if (inputArr.value[4].val == true) {
-        fw = 1
         tableHeader.value.push('dec')
     }
     for (var i = 0; i < inputListNames.value.length; i++) {

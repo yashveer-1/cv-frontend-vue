@@ -87,6 +87,6 @@ describe('Combinational Analysis Testing', () => {
         testData.AndGate.groups[0].outputs[0].label = 'AB';
 
         const result = runAll(testData.AndGate);
-        expect(result.summary.passed).toBe(3);
+        expect(result.summary.passed).toBe(4);
     });
 });

@@ -56,51 +56,73 @@ export const performCombinationalAnalysis = (inputNameList, outputNameList, bool
     }
 };
 
-export const GenerateCircuit = (outputListNamesInteger, inputListNames, output, outputListNames, scope = globalScope) => {
-    var data = generateBooleanTableData(outputListNamesInteger);
-    // passing the hash values to avoid spaces being passed which is causing a problem
+export const GenerateCircuit = (outputListNamesInteger, inputListNames, output, outputListNames, tableBody = null, scope = globalScope) => {
     var minimizedCircuit = [];
     let inputCount = inputListNames.length;
-    for (const output in data) {
-        let oneCount = data[output][1].length; // Number of ones
-        let zeroCount = data[output][0].length; // Number of zeroes
-        if(oneCount == 0) {
-            // Hardcode to 0 as output
+
+    if (output != null) {
+        // Boolean expression mode: we have the pre-solved output array, minimize it directly.
+        const ones = output.map((v, i) => i).filter(i => Number(output[i]) === 1);
+        const xs   = output.map((v, i) => i).filter(i => output[i] === 'x' || output[i] === undefined);
+        const zeros = output.map((v, i) => i).filter(i => Number(output[i]) === 0);
+        if (ones.length === 0) {
             minimizedCircuit.push(['-'.repeat(inputCount) + '0']);
-        }
-        else if(zeroCount == 0) {
-            // Hardcode to 1 as output
+        } else if (zeros.length === 0) {
             minimizedCircuit.push(['-'.repeat(inputCount) + '1']);
-        }
-        else {
-            // Perform KMap like minimzation
-            const temp = new BooleanMinimize(
-                inputListNames.length,
-                data[output][1].map(Number),
-                data[output].x.map(Number),
-            );
+        } else {
+            const temp = new BooleanMinimize(inputCount, ones.map(Number), xs.map(Number));
             minimizedCircuit.push(temp.result);
         }
-    }
-    if (output == null) {
-        drawCombinationalAnalysis(minimizedCircuit, inputListNames, outputListNames, scope);
-    }
-    else {
         drawCombinationalAnalysis(minimizedCircuit, inputListNames, [`${outputListNames}`], scope);
+    } else {
+        // Combinational analysis mode: read 0/1/x values from the tableBody array.
+        var data = generateBooleanTableData(outputListNamesInteger, tableBody || []);
+        for (const outKey in data) {
+            let oneCount  = data[outKey][1].length;
+            let zeroCount = data[outKey][0].length;
+            if (oneCount === 0) {
+                minimizedCircuit.push(['-'.repeat(inputCount) + '0']);
+            } else if (zeroCount === 0) {
+                minimizedCircuit.push(['-'.repeat(inputCount) + '1']);
+            } else {
+                const temp = new BooleanMinimize(
+                    inputCount,
+                    data[outKey][1].map(Number),
+                    data[outKey].x.map(Number),
+                );
+                minimizedCircuit.push(temp.result);
+            }
+        }
+        drawCombinationalAnalysis(minimizedCircuit, inputListNames, outputListNames, scope);
     }
 };
 
-function generateBooleanTableData(outputListNames) {
+
+/**
+ * Build the truth-table data structure from the reactive tableBody array instead
+ * of querying the DOM with jQuery (which no longer works in the Vue 3 build).
+ * tableBody rows: [decOrInputCols..., outputCols...]
+ * The output columns start at index `inputCount` (+ 1 if decimal column present).
+ */
+function generateBooleanTableData(outputListNamesInteger, tableBody) {
     var data = {};
-    for (var i = 0; i < outputListNames.length; i++) {
-        data[outputListNames[i]] = {
-            x: [],
-            1: [],
-            0: [],
-        };
-        var rows = $(`.${outputListNames[i]}`);
-        for (let j = 0; j < rows.length; j++) {
-            data[outputListNames[i]][rows[j].innerHTML].push(rows[j].id);
+    for (var i = 0; i < outputListNamesInteger.length; i++) {
+        var key = outputListNamesInteger[i];
+        data[key] = { x: [], 1: [], 0: [] };
+    }
+    for (var rowIdx = 0; rowIdx < tableBody.length; rowIdx++) {
+        var row = tableBody[rowIdx];
+        for (var i = 0; i < outputListNamesInteger.length; i++) {
+            var key = outputListNamesInteger[i];
+            // outputListNamesInteger holds column indices for output columns
+            var cellVal = row[key];
+            if (cellVal === 'x' || cellVal === undefined) {
+                data[key].x.push(rowIdx);
+            } else if (Number(cellVal) === 1) {
+                data[key][1].push(rowIdx);
+            } else {
+                data[key][0].push(rowIdx);
+            }
         }
     }
     return data;
@@ -238,37 +260,31 @@ function drawCombinationalAnalysis(combinationalData, inputList, outputListNames
  * @param {Array}  inputListNames - labels for input nodes
  * @param {String} booleanExpression - boolean expression which is to be solved
  */
+/**
+ * Solves the given boolean expression for all input combinations.
+ * Returns an array of 0/1 results (one per row), or null on error.
+ * Does NOT mutate any Vue ref — the caller is responsible for storing the result.
+ */
 export function solveBooleanFunction(inputListNames, booleanExpression) {
    let i
    let j
-   output.value = []
+   const result = []
 
    if (
        booleanExpression.match(
            /[^ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01+'() ]/g
        ) != null
    ) {
-       // alert('One of the characters is not allowed.')
-       confirmSingleOption('One of the characters is not allowed.')
-       return
+       alert('One of the characters is not allowed.')
+       return null
    }
 
    if (inputListNames.length > 8) {
-       // alert('You can only have 8 variables at a time.')
-       confirmSingleOption('You can only have 8 variables at a time.')
-       return
-   }
-   var matrix = []
-   for (i = 0; i < inputListNames.length; i++) {
-       matrix[i] = new Array(inputListNames.length)
+       alert('You can only have 8 variables at a time.')
+       return null
    }
 
-   for (i = 0; i < inputListNames.length; i++) {
-       for (j = 0; j < 1 << inputListNames.length; j++) {
-           matrix[i][j] = +((j & (1 << (inputListNames.length - i - 1))) != 0)
-       }
-   }
-   // generate equivalent expression by replacing input vars with possible combinations of o and 1
+   // generate equivalent expression by replacing input vars with possible combinations of 0 and 1
    for (i = 0; i < 2 ** inputListNames.length; i++) {
        const data = []
        for (j = 0; j < inputListNames.length; j++) {
@@ -283,8 +299,10 @@ export function solveBooleanFunction(inputListNames, booleanExpression) {
            )
        }
 
-       output.value[i] = solve(equation)
+       result[i] = solve(equation)
    }
+   return result
+
    // generates solution for the truth table of booleanexpression
    function solve(equation) {
        while (equation.indexOf('(') != -1) {

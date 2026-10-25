@@ -29,6 +29,8 @@
                         v-if="tableHeader.length > 0"
                         :table-header="tableHeader"
                         :table-body="tableBody"
+                        :input-col-count="inputColCount"
+                        @update:table-body="(newBody) => emit('tableBodyUpdate', newBody)"
                     />
                 </v-card-text>
                 <v-card-actions>
@@ -56,7 +58,7 @@
 import BooleanTable from '@/DialogBox/BooleanTable.vue'
 import { ref } from 'vue'
 
-const emit = defineEmits(['buttonClick'])
+const emit = defineEmits(['buttonClick', 'tableBodyUpdate'])
 
 const props = defineProps({
     messageText: { type: String, default: '' },
@@ -82,6 +84,7 @@ const props = defineProps({
     circuitItem: { type: Object, default: () => ({}) },
     tableHeader: { type: Array, default: () => [] },
     tableBody: { type: Array, default: () => [] },
+    inputColCount: { type: Number, default: 0 },
 })
 
 const messageBoxCard = ref(null)

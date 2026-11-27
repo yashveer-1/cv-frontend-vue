@@ -321,4 +321,12 @@ describe("Theme subsystem and dialog", () => {
       defaultCustomTheme["--primary"],
     );
   });
+
+  it("clears stale theme variables when switching themes", () => {
+    updateThemeForStyle("High Contrast");
+    expect(document.documentElement.style.getPropertyValue("--context-text-hov")).toBe("black");
+
+    updateThemeForStyle("Night Sky");
+    expect(document.documentElement.style.getPropertyValue("--context-text-hov")).toBe("");
+  });
 });

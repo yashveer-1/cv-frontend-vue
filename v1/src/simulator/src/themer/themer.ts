@@ -1,5 +1,5 @@
 import { dots } from "../canvasApi";
-import importedThemeOptions from "./themes";
+import importedThemeOptions, { defaultCustomTheme } from "./themes";
 import { ThemeOptions } from "./themer.types";
 import themeCardSvg from "./themeCardSvg";
 import { SimulatorStore } from "#/store/SimulatorStore/SimulatorStore";
@@ -54,6 +54,17 @@ export function updateThemeForStyle(themeName: string): void {
   if (selectedTheme === undefined) return;
 
   const html = document.documentElement;
+  // Clear prior theme tokens so missing keys in a target theme never leak stale inline styles.
+  const allThemeKeys = new Set<string>(Object.keys(defaultCustomTheme));
+  Object.values(themeOptions).forEach((theme) => {
+    Object.keys(theme).forEach((key) => allThemeKeys.add(key));
+  });
+  allThemeKeys.forEach((property) => {
+    if (!(property in selectedTheme)) {
+      html.style.removeProperty(property);
+    }
+  });
+
   Object.keys(selectedTheme).forEach((property) => {
     html.style.setProperty(property, selectedTheme[property]);
   });
